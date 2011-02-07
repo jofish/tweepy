@@ -76,6 +76,8 @@ class Stream(object):
         self.retry_time = options.get("retry_time") or 10.0
         self.snooze_time = options.get("snooze_time") or 5.0
         self.buffer_size = options.get("buffer_size") or 1500
+        self.proxy_host = options.get("proxy_host") or ""
+        self.proxy_port = options.get("proxy_port") or 80
         if options.get("secure"):
             self.scheme = "https"
         else:
@@ -100,10 +102,16 @@ class Stream(object):
                 # quit if error count greater than retry count
                 break
             try:
-                if self.scheme == "http":
-                    conn = httplib.HTTPConnection(self.host)
+                if self.proxy_host:
+                    if self.scheme == "http":
+                        conn = httplib.HTTPConnection(self.proxy_host, self.proxy_port)
+                    else:
+                        conn = httplib.HTTPSConnection(self.proxy_host, self.proxy_port)
                 else:
-                    conn = httplib.HTTPSConnection(self.host)
+                    if self.scheme == "http":
+                        conn = httplib.HTTPConnection(self.host)
+                    else:
+                        conn = httplib.HTTPSConnection(self.host)
                 conn.connect()
                 conn.sock.settimeout(self.timeout)
                 conn.request('POST', self.url, self.body, headers=self.headers)
